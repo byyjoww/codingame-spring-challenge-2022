@@ -218,6 +218,7 @@ public class FollowState : StateBase {
         if (!target.IsCrowdControlled 
             && !(target.TargettedBy != null && target.TargettedBy.Casting) 
             && player.Mana >= ControlSpell.COST 
+            && !target.IsShielded
             && Vector2Int.Distance(target.Position, _hero.Position) <= ControlSpell.RANGE 
             && Vector2Int.Distance(target.Position, Battlefield.PlayerBase) <= 5000
         ) {
@@ -292,6 +293,7 @@ public class DefenderFollowState : FollowState {
 
         if (Vector2Int.Distance(target.Position, Battlefield.PlayerBase) < 4000 
             && !target.IsCrowdControlled 
+            && !target.IsShielded
             && !(target.TargettedBy != null && target.TargettedBy.Casting) 
             && player.Mana >= WindSpell.COST 
             && Vector2Int.Distance(target.Position, _hero.Position) <= WindSpell.RANGE
@@ -386,6 +388,7 @@ public class AttackerFollowState : FollowState {
             .FirstOrDefault();
         if (castTarget != null 
             && !castTarget.IsCrowdControlled 
+            && !target.ShieldRounds
             && !(castTarget.TargettedBy != null && castTarget.TargettedBy.Casting) 
             && castTarget.ThreatPriority != -1 
             && player.Mana >= ControlSpell.COST 
@@ -655,11 +658,12 @@ public abstract class Entity : IEntity {
     public EEntityType EntityType { get; protected set; }
     public int Id { get; protected set; }    
     public int Health { get; protected set; }
-    public int Shield { get; protected set; }
+    public int ShieldRounds { get; protected set; }
     public bool IsCrowdControlled { get; protected set; }
     public Vector2Int Position { get; protected set; }
     public Vector2Int Trajectory { get; protected set; }
     public float Speed { get; protected set; }
+    public bool IsShielded => ShieldRounds > 0;
 
     public Entity() {
 
@@ -673,7 +677,7 @@ public abstract class Entity : IEntity {
         EntityType = (EEntityType)int.Parse(_raw[1]);    
         Id = int.Parse(_raw[0]);
         Health = int.Parse(_raw[6]);
-        Shield = int.Parse(_raw[4]);
+        ShieldRounds = int.Parse(_raw[4]);
         IsCrowdControlled = int.Parse(_raw[5]) == 1;
         Position = new Vector2Int(int.Parse(_raw[2]), int.Parse(_raw[3]));
         Trajectory = new Vector2Int(int.Parse(_raw[7]), int.Parse(_raw[8]));        
@@ -718,11 +722,12 @@ public interface IEntity {
     EEntityType EntityType { get; }
     int Id { get; }
     int Health { get; }
-    int Shield { get; } // Ignore for this league; Count down until shield spell fades
+    int ShieldRounds { get; } // Ignore for this league; Count down until shield spell fades
     bool IsCrowdControlled { get; } // Ignore for this league; Equals 1 when this entity is under a control spell
     Vector2Int Position { get; }
     Vector2Int Trajectory { get; }
     float Speed { get; }
+    bool IsShielded { get; }
     
     void UpdateData(string[] raw);
 }
