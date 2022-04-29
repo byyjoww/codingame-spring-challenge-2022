@@ -84,7 +84,7 @@ public class Hero : Entity, IHero {
     private User opponent = default;
 
     public Hero(int _index, Battlefield _battlefield, User _player, User _opponent, IState _idle, IState _follow) : base() {
-        this.Id = -_index;
+        this.Id = -(_index+1);
         this.Index = _index;
         this.IdleState = _idle;
         this.FollowState = _follow;
@@ -98,7 +98,6 @@ public class Hero : Entity, IHero {
         if (CurrentState == null){
             CurrentState = IdleState;
             CurrentState.OnEnter(this);
-            Debug.Log($"created new hero with id {Id} / index {Index}");
         }
         Casting = false;
         CurrentState.OnUpdate(this);
@@ -186,17 +185,12 @@ public class IdleState : StateBase {
 
     protected virtual Vector2Int CalculateIdleSpot()
     {        
-        var spawns = new Vector2Int[] 
+        return new Vector2Int[] 
         {
             Battlefield.IsTopLeft ? new Vector2Int(5000, 900) : new Vector2Int(16000, 4000), // top
             Battlefield.IsTopLeft ? new Vector2Int(4000, 3000) : new Vector2Int(14500, 5000), // middle
             Battlefield.IsTopLeft ? new Vector2Int(1500, 4700) : new Vector2Int(13000, 7000), // bottom
-        };
-        if (spawns.Length <= heroIndex) {
-            Debug.Log($"spawn length {spawns.Length} is smaller than hero index {heroIndex}");
-            return spawns[0];
-        }
-        return spawns[heroIndex];
+        }[heroIndex];
     }
 }
 
@@ -597,9 +591,7 @@ public class EntityFactory {
         } else {
             var negativeHeroKvp = roster.Heroes.FirstOrDefault(x => x.Value.Id < 0);
             if (negativeHeroKvp.Value is null) {
-                IHero hero = heroFactory.Balanced(_id);
-                hero.UpdateData(_raw);
-                roster.Heroes.Add(_id, hero);                
+                throw new System.Exception("attempting to add a new hero");
             } else {
                 IHero hero = roster.Heroes[negativeHeroKvp.Key];
                 hero.UpdateData(_raw);
