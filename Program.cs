@@ -266,7 +266,7 @@ public class DefenderIdleState : IdleState {
 
     private bool HasCriticalCreatures(IHero _hero) {
         return battlefield.Creatures.Values
-            .Where(x => x.ThreatPriority > 1 && Vector2Int.Distance(Battlefield.PlayerBase, x.Position) < 7000)
+            .Where(x => x.ThreatPriority > 1 && Vector2Int.Distance(Battlefield.PlayerBase, x.Position) < 5000)
             .Count() > 0;
     }
 }
@@ -290,7 +290,7 @@ public class DefenderFollowState : FollowState {
             return;
         }     
 
-        if (Vector2Int.Distance(target.Position, Battlefield.PlayerBase) < 5000 
+        if (Vector2Int.Distance(target.Position, Battlefield.PlayerBase) < 4000 
             && !target.IsCrowdControlled 
             && !(target.TargettedBy != null && target.TargettedBy.Casting) 
             && player.Mana >= WindSpell.COST 
@@ -305,7 +305,7 @@ public class DefenderFollowState : FollowState {
 
     protected override ICreature GetHighestPriorityTarget(IHero _hero) {
         return battlefield.Creatures.Values
-            .Where(x => x.ThreatPriority > 1 && Vector2Int.Distance(Battlefield.PlayerBase, x.Position) < 7000)
+            .Where(x => x.ThreatPriority > 1 && Vector2Int.Distance(Battlefield.PlayerBase, x.Position) < 5000)
             .OrderByDescending(x => x.ThreatPriority)
             .FirstOrDefault();
     }
@@ -357,21 +357,7 @@ public class AttackerFollowState : FollowState {
         { 
             _hero.TransitionToState(_hero.IdleState);
             return;
-        }
-
-        var castTarget = battlefield.Creatures.Values
-            .Where(x => x.ThreatPriority > 0 && Vector2Int.Distance(x.Position, _hero.Position) <= ControlSpell.RANGE && x.HealthPercent > 0.5f)            
-            .OrderBy(x => x.ThreatPriority)
-            .FirstOrDefault();
-        if (castTarget != null 
-            && !castTarget.IsCrowdControlled 
-            && !(castTarget.TargettedBy != null && castTarget.TargettedBy.Casting) 
-            && castTarget.ThreatPriority != -1 
-            && player.Mana >= ControlSpell.COST 
-            && Vector2Int.Distance(castTarget.Position, _hero.Position) <= ControlSpell.RANGE
-        ) {
-            _hero.Cast(new ControlSpell(castTarget, Battlefield.OpponentBase - castTarget.Position));
-        }
+        }        
 
         target = GetHighestPriorityTarget(_hero);
         if (target == null) {
@@ -391,6 +377,24 @@ public class AttackerFollowState : FollowState {
             .Where(x => x.ThreatPriority > 0 && Vector2Int.Distance(new Vector2Int(Battlefield.X_MAX/2, Battlefield.Y_MAX/2), x.Position) < 5000)
             .OrderBy(x => Vector2Int.Distance(_hero.Position, x.Position))
             .FirstOrDefault();
+    }
+
+    protected bool CastSpellOnRandomCreature(IHero _hero) {
+        var castTarget = battlefield.Creatures.Values
+            .Where(x => x.ThreatPriority > 0 && Vector2Int.Distance(x.Position, _hero.Position) <= ControlSpell.RANGE && x.HealthPercent > 0.5f)            
+            .OrderBy(x => x.ThreatPriority)
+            .FirstOrDefault();
+        if (castTarget != null 
+            && !castTarget.IsCrowdControlled 
+            && !(castTarget.TargettedBy != null && castTarget.TargettedBy.Casting) 
+            && castTarget.ThreatPriority != -1 
+            && player.Mana >= ControlSpell.COST 
+            && Vector2Int.Distance(castTarget.Position, _hero.Position) <= ControlSpell.RANGE
+        ) {
+            _hero.Cast(new ControlSpell(castTarget, Battlefield.OpponentBase - castTarget.Position));
+            return true;
+        }
+        return false;
     }
 
     protected bool HasMoreThanXWindTargetsTowardsTheEnemy(int _requiredTargets){
